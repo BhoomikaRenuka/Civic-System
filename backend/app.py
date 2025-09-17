@@ -530,14 +530,27 @@ def staff_update_issue_status():
         # Emit user-targeted notification
         try:
             room_name = f"user_{updated_issue['user_id']}"
-            socketio.emit('notification', {
-                'title': 'Issue Status Updated',
-                'message': f"Your issue '{updated_issue['title']}' is now {new_status}",
+            socketio.emit('user_notification', {
+                'title': updated_issue['title'],
+                'message': f"Your issue '{updated_issue['title']}' status has been updated to: {new_status}",
                 'type': 'issue_status',
                 'issue_id': issue_id,
                 'status': new_status,
+                'updated_by': f"{staff_user['name']} ({user_category} Staff)",
                 'created_at': datetime.utcnow().isoformat()
             }, room=room_name)
+
+            # Also emit to all users (for the user's dashboard)
+            socketio.emit('user_notification', {
+                'title': updated_issue['title'],
+                'message': f"Your issue '{updated_issue['title']}' status has been updated to: {new_status}",
+                'type': 'issue_status',
+                'issue_id': issue_id,
+                'status': new_status,
+                'user_id': updated_issue['user_id'],
+                'updated_by': f"{staff_user['name']} ({user_category} Staff)",
+                'created_at': datetime.utcnow().isoformat()
+            })
         except Exception as e:
             print(f"Failed to emit user notification: {e}")
 
@@ -677,15 +690,28 @@ def update_issue_status():
         # Emit user-targeted notification to the reporter's room
         try:
             room_name = f"user_{issue['user_id']}"
-            socketio.emit('notification', {
-                'title': 'Issue Status Updated',
-                'message': f"Your issue '{issue['title']}' is now {new_status}",
+            socketio.emit('user_notification', {
+                'title': issue['title'],
+                'message': f"Your issue '{issue['title']}' status has been updated to: {new_status}",
                 'type': 'issue_status',
                 'issue_id': issue_id,
                 'status': new_status,
+                'updated_by': f"{user['name']} (Administrator)",
                 'created_at': datetime.utcnow().isoformat()
             }, room=room_name)
-            print(f"Notification emitted to room {room_name}")
+
+            # Also emit to all users (for the user's dashboard)
+            socketio.emit('user_notification', {
+                'title': issue['title'],
+                'message': f"Your issue '{issue['title']}' status has been updated to: {new_status}",
+                'type': 'issue_status',
+                'issue_id': issue_id,
+                'status': new_status,
+                'user_id': issue['user_id'],
+                'updated_by': f"{user['name']} (Administrator)",
+                'created_at': datetime.utcnow().isoformat()
+            })
+            print(f"User notification emitted for issue {issue_id}")
         except Exception as e:
             print(f"Failed to emit user notification: {e}")
         

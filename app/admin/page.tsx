@@ -27,14 +27,10 @@ import { Navbar } from "@/components/navbar"
 import { issuesApi } from "@/lib/api"
 
 const categories = [
-  "Road Issues",
-  "Street Lighting",
-  "Waste Management",
-  "Water & Drainage",
-  "Public Safety",
-  "Parks & Recreation",
-  "Traffic Signals",
-  "Graffiti",
+  "Road",
+  "Electricity",
+  "Waste",
+  "Water",
   "Other",
 ]
 

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .issue-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #ffc107; color: #212529; }
+        .status-in-progress { background-color: #007bff; color: white; }
+        .status-resolved { background-color: #28a745; color: white; }
+        .error { color: #dc3545; background-color: #f8d7da; padding: 10px; border-radius: 4px; }
+        .success { color: #155724; background-color: #d4edda; padding: 10px; border-radius: 4px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Admin Dashboard Test</h1>
+        <p>Test admin authentication and reports functionality</p>
+    </div>
+
+    <div class="container">
+        <h2>Admin Login Test</h2>
+        <div id="loginSection">
+            <button onclick="testAdminLogin()">Test Admin Login</button>
+            <div id="loginResult"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Admin Reports Test</h2>
+        <div id="reportsSection">
+            <button onclick="testAdminReports()" id="reportsBtn" disabled>Test Admin Reports</button>
+            <div id="reportsResult"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Status Update Test</h2>
+        <div id="updateSection">
+            <button onclick="testStatusUpdate()" id="updateBtn" disabled>Test Status Update</button>
+            <div id="updateResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let adminToken = null;
+        let testIssues = [];
+
+        async function testAdminLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@civicreport.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    adminToken = data.access_token;
+                    localStorage.setItem('token_admin', adminToken);
+                    localStorage.setItem('user_admin', JSON.stringify(data.user));
+                    
+                    document.getElementById('loginResult').innerHTML = `
+                        <div class="success">
+                            ✅ Admin login successful!<br>
+                            User: ${data.user.name} (${data.user.role})<br>
+                            Token: ${adminToken.substring(0, 20)}...
+                        </div>
+                    `;
+                    
+                    document.getElementById('reportsBtn').disabled = false;
+                    document.getElementById('updateBtn').disabled = false;
+                } else {
+                    document.getElementById('loginResult').innerHTML = `
+                        <div class="error">❌ Login failed: ${data.message || 'Unknown error'}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `
+                    <div class="error">❌ Login error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function testAdminReports() {
+            if (!adminToken) {
+                document.getElementById('reportsResult').innerHTML = `
+                    <div class="error">❌ Please login first</div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/reports`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    testIssues = data.issues;
+                    
+                    let issuesHtml = '';
+                    data.issues.slice(0, 3).forEach(issue => {
+                        issuesHtml += `
+                            <div class="issue-card">
+                                <h4>${issue.title}</h4>
+                                <p>${issue.description}</p>
+                                <p><strong>Category:</strong> ${issue.category}</p>
+                                <p><strong>Status:</strong> 
+                                    <span class="status-badge status-${issue.status.toLowerCase().replace(' ', '-')}">${issue.status}</span>
+                                </p>
+                                <p><strong>Reporter:</strong> ${issue.user_name} (${issue.user_email})</p>
+                                <p><strong>Location:</strong> ${issue.location?.address || 'No location'}</p>
+                                <p><strong>Date:</strong> ${new Date(issue.created_at).toLocaleDateString()}</p>
+                            </div>
+                        `;
+                    });
+                    
+                    document.getElementById('reportsResult').innerHTML = `
+                        <div class="success">
+                            ✅ Admin reports loaded successfully!<br>
+                            Total issues: ${data.issues.length}<br>
+                            Showing first 3 issues:
+                        </div>
+                        ${issuesHtml}
+                    `;
+                } else {
+                    document.getElementById('reportsResult').innerHTML = `
+                        <div class="error">❌ Reports failed: ${data.message || 'Unknown error'}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('reportsResult').innerHTML = `
+                    <div class="error">❌ Reports error: ${error.message}</div>
+                `;
+            }
+        }
+
+        async function testStatusUpdate() {
+            if (!adminToken || testIssues.length === 0) {
+                document.getElementById('updateResult').innerHTML = `
+                    <div class="error">❌ Please login and load reports first</div>
+                `;
+                return;
+            }
+
+            const testIssue = testIssues[0];
+            const currentStatus = testIssue.status;
+            const newStatus = currentStatus === 'Pending' ? 'In Progress' : 'Pending';
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${adminToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        issue_id: testIssue._id,
+                        status: newStatus
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('updateResult').innerHTML = `
+                        <div class="success">
+                            ✅ Status update successful!<br>
+                            Issue: ${testIssue.title}<br>
+                            Changed from: ${currentStatus} → ${newStatus}<br>
+                            Message: ${data.message}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('updateResult').innerHTML = `
+                        <div class="error">❌ Status update failed: ${data.message || 'Unknown error'}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('updateResult').innerHTML = `
+                    <div class="error">❌ Status update error: ${error.message}</div>
+                `;
+            }
+        }
+
+        // Auto-load stored token on page load
+        window.onload = function() {
+            const storedToken = localStorage.getItem('token_admin');
+            const storedUser = localStorage.getItem('user_admin');
+            
+            if (storedToken && storedUser) {
+                adminToken = storedToken;
+                const user = JSON.parse(storedUser);
+                
+                document.getElementById('loginResult').innerHTML = `
+                    <div class="success">
+                        ✅ Using stored admin session<br>
+                        User: ${user.name} (${user.role})<br>
+                        Token: ${adminToken.substring(0, 20)}...
+                    </div>
+                `;
+                
+                document.getElementById('reportsBtn').disabled = false;
+                document.getElementById('updateBtn').disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

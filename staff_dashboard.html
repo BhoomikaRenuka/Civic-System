@@ -1,353 +1,362 @@
-# 🎉 Implementation Summary - All Requested Features Complete
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - Civic Issue Reporting System</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f5f5f5;
+        }
 
-## ✅ **REQUESTED CHANGES IMPLEMENTED**
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .hidden {
+            display: none;
+        }
+        .login-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
 
-### 1. **UI Modifications - COMPLETED** ✅
+        @media (min-width: 640px) {
+            .login-options {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+        }
 
-#### **Staff Dashboard Changes:**
-- ❌ **REMOVED**: "My Reports" section from top navigation
-- ❌ **REMOVED**: "Report New Issue" from Quick Actions section  
-- ❌ **REMOVED**: "My Reports" from Quick Actions section
-- ❌ **REMOVED**: "Recent Reports" section entirely
+        @media (min-width: 1024px) {
+            .login-options {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+        }
+        .login-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .login-card:hover {
+            border-color: #007bff;
+            transform: translateY(-2px);
+        }
+        .category-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
 
-#### **Admin Dashboard Changes:**
-- ❌ **REMOVED**: "My Reports" from navigation (admin role)
-- ❌ **REMOVED**: "Report New Issue" from Quick Actions (admin role)
-- ❌ **REMOVED**: "Recent Reports" section for admin users
-- ✅ **ADDED**: Admin-specific quick actions (Community Issues, Solved Issues, Admin Panel)
+        @media (min-width: 768px) {
+            .stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .issue-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        .issue-header {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
 
-### 2. **Linking Between Pages - COMPLETED** ✅
+        @media (min-width: 768px) {
+            .issue-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 0;
+            }
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .status-in-progress {
+            background-color: #007bff;
+            color: white;
+        }
+        .status-resolved {
+            background-color: #28a745;
+            color: white;
+        }
+        .status {
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+        .notification.success {
+            background-color: #28a745;
+        }
+        .notification.error {
+            background-color: #dc3545;
+        }
+        .notification.info {
+            background-color: #17a2b8;
+        }
 
-#### **Staff ↔ Admin Connection:**
-- ✅ **Staff Dashboard** → "View as Admin" button opens admin interface
-- ✅ **Admin Interface** → "Staff Dashboard" button opens staff interface
-- ✅ **Synchronized Data**: Both views show the same issues with real-time updates
-- ✅ **Cross-Access**: Staff can see issues in their category, Admin sees ALL issues
+        /* Responsive button styles */
+        @media (max-width: 767px) {
+            button {
+                font-size: 14px;
+                padding: 12px 16px;
+            }
 
-#### **Issue Visibility:**
-- ✅ **User submits Road issue** → **Road Staff can see it** → **Admin can see it**
-- ✅ **User submits Waste issue** → **Waste Staff can see it** → **Admin can see it**
-- ✅ **Status updates sync** between staff and admin views in real-time
+            .login-card {
+                padding: 15px;
+            }
 
-### 3. **Real-Time Status Updates - COMPLETED** ✅
+            .stat-card {
+                padding: 15px;
+            }
 
-#### **Live Updates:**
-- ✅ **Auto-refresh**: Issues list refreshes every 60 seconds automatically
-- ✅ **Real-time indicators**: Green/Red status showing connection state
-- ✅ **Instant sync**: Status changes appear immediately in both staff and admin views
-- ✅ **WebSocket integration**: Real-time notifications for status changes
+            .container {
+                padding: 15px;
+            }
 
-#### **Status Update Workflow:**
-- ✅ **Staff updates status** → **Admin sees change immediately**
-- ✅ **Admin updates status** → **Staff sees change immediately**
-- ✅ **User sees updates** in their reports instantly
+            .header {
+                padding: 15px;
+            }
 
-### 4. **Email Notifications - COMPLETED** ✅
+            .header h1 {
+                font-size: 1.5rem;
+            }
 
-#### **Automatic Email System:**
-- ✅ **Staff updates status** → **Email sent to user automatically**
-- ✅ **Admin updates status** → **Email sent to user automatically**
-- ✅ **Email content includes**:
-  - Issue title and details
-  - New status
-  - Who updated it (Staff name + department OR Admin)
-  - Date and time of update
-  - Professional HTML formatting
+            .stat-number {
+                font-size: 1.5em;
+            }
+        }
 
-#### **Email Configuration:**
-- ✅ **SMTP integration** with Gmail support
-- ✅ **Background sending** (non-blocking)
-- ✅ **Error handling** for failed email delivery
-- ✅ **User feedback** showing email was sent
+        /* Responsive table styles */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
 
-## 🔧 **TECHNICAL IMPLEMENTATION**
+        @media (max-width: 767px) {
+            .issue-card {
+                padding: 12px;
+            }
 
-### **Backend Changes (app.py):**
-1. **Added email functionality**:
-   - SMTP configuration
-   - HTML email templates
-   - Background email sending
-   - Error handling
+            .issue-card .form-group select,
+            .issue-card .form-group button {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ Staff Dashboard</h1>
+        <p>Civic Issue Reporting System - Staff Management Portal</p>
+        <div id="backend-status">Checking connection...</div>
+    </div>
 
-2. **Enhanced status update endpoints**:
-   - `/staff/update` - sends email notifications
-   - `/admin/update` - sends email notifications
-   - Real-time WebSocket broadcasts
-
-### **Frontend Changes:**
-
-#### **Staff Dashboard (staff_dashboard.html):**
-- Real-time status indicators
-- Email notification confirmations
-- Admin view integration
-- Auto-refresh functionality
-
-#### **Admin Interface (test_frontend.html):**
-- Role-based UI modifications
-- Admin-specific issue management
-- Status update with email feedback
-- Real-time connection monitoring
-
-#### **Navigation (navbar.tsx, dashboard/page.tsx):**
-- Conditional rendering based on user role
-- Removed unnecessary sections for admin
-- Added role badges and indicators
-
-## 🎯 **COMPLETE WORKFLOW VERIFIED**
-
-### **End-to-End Process:**
-1. **User Registration** → Submit issue in any category
-2. **Issue Routing** → Goes to appropriate staff department
-3. **Staff Processing** → Staff can see and update only their category
-4. **Email Notification** → User receives email when status changes
-5. **Admin Oversight** → Admin can see and update ALL issues
-6. **Real-time Sync** → All changes appear instantly across interfaces
-
-### **Example Workflow:**
-```
-User submits "Road Issue" 
-    ↓
-Road Staff sees it in their dashboard
-    ↓
-Road Staff updates: Pending → In Progress
-    ↓
-Email sent to user automatically
-    ↓
-Admin sees the same issue with updated status
-    ↓
-Admin can further update: In Progress → Resolved
-    ↓
-Another email sent to user
-    ↓
-Both Staff and Admin see "Resolved" status in real-time
-```
-
-## 🌐 **HOW TO USE THE SYSTEM**
-
-### **For Users:**
-1. Open `test_frontend.html`
-2. Register/Login as regular user
-3. Submit issues in different categories
-4. Receive email notifications when status changes
-
-### **For Staff:**
-1. Open `staff_dashboard.html`
-2. Click your department's quick-login button
-3. See only issues in your category
-4. Update status → User gets email automatically
-
-### **For Admin:**
-1. Open `test_frontend.html`
-2. Login with `admin@civicreport.com` / `admin123`
-3. See ALL issues across all categories
-4. Update any issue status → User gets email automatically
-
-## 📧 **EMAIL CONFIGURATION**
-
-### **Current Setup:**
-- **SMTP Server**: Gmail (smtp.gmail.com:587)
-- **Status**: Configured but needs real credentials
-- **Testing**: Working with mock emails
-
-### **To Enable Real Emails:**
-1. Update `EMAIL_CONFIG` in `backend/app.py`:
-   ```python
-EMAIL_CONFIG = {
-       'EMAIL_ADDRESS': 'your-email@gmail.com',
-       'EMAIL_PASSWORD': 'your-app-password',
-       # ... other settings
-   }
-```
-2. For Gmail: Enable 2FA and create app password
-3. Test with real email addresses
-
-## 🚀 **SYSTEM STATUS**
-
-### **✅ ALL REQUESTED FEATURES IMPLEMENTED:**
-- ✅ Removed unnecessary sections from Staff/Admin UI
-- ✅ Created proper linking between Staff and Admin pages
-- ✅ Implemented real-time status updates
-- ✅ Added automatic email notifications
-- ✅ Ensured data synchronization across all interfaces
-
-### **✅ ADDITIONAL IMPROVEMENTS:**
-- ✅ Role-based UI customization
-- ✅ Real-time connection indicators
-- ✅ Auto-refresh functionality
-- ✅ Professional email templates
-- ✅ Error handling and user feedback
-- ✅ Cross-platform compatibility
-
-## 🔄 **REAL-TIME FEATURES - COMPLETED** ✅
-
-### **WebSocket Integration:**
-- ✅ **Real-time connections** established between all interfaces
-- ✅ **Instant data synchronization** between staff and admin dashboards
-- ✅ **Live status indicators** showing connection state
-- ✅ **Automatic reconnection** handling for network issues
-
-### **Real-Time Data Flow:**
-- ✅ **User submits issue** → **Instant notification to admin dashboard**
-- ✅ **Staff updates status** → **Real-time sync to admin + email to user**
-- ✅ **Admin updates status** → **Real-time sync to staff + email to user**
-- ✅ **All changes appear instantly** across all connected interfaces
-
-### **Email Notifications (Real-Time Triggered):**
-- ✅ **Staff status update** → **Immediate email to user**
-- ✅ **Admin status update** → **Immediate email to user**
-- ✅ **Background processing** - emails sent without blocking UI
-- ✅ **Professional HTML templates** with all issue details
-
-## 🎯 **COMPLETE FEATURE VERIFICATION**
-
-### **✅ ALL REQUESTED MODIFICATIONS IMPLEMENTED:**
-
-#### **1. UI Sections Removed (Staff Pages):**
-- ❌ **"My Reports" section** - Completely removed from staff navigation
-- ❌ **"Report New Issue"** - Removed from staff quick actions
-- ❌ **"My Reports"** - Removed from staff quick actions
-- ❌ **"Recent Reports" section** - Completely removed for staff users
-
-#### **2. Real-Time Data Synchronization:**
-- ✅ **WebSocket connections** - All interfaces connected for real-time updates
-- ✅ **Instant data sync** - Changes appear immediately across all dashboards
-- ✅ **Live status indicators** - Real-time connection status displayed
-- ✅ **Auto-refresh** - Data updates automatically without manual refresh
-
-#### **3. Staff & Admin Status Updates:**
-- ✅ **Staff can update status** - Category-specific issue management
-- ✅ **Admin can update status** - Full system oversight
-- ✅ **Real-time synchronization** - Updates appear instantly everywhere
-- ✅ **Email notifications** - Users receive emails automatically
-
-#### **4. Email System (Real-Time):**
-- ✅ **Automatic email sending** when status changes
-- ✅ **Professional HTML templates** with issue details
-- ✅ **Background processing** - non-blocking email delivery
-- ✅ **Real-time triggers** - emails sent immediately on status updates
-
-## 🌐 **COMPLETE SYSTEM ARCHITECTURE**
-
-### **Frontend Interfaces:**
-1. **User Interface** (`test_frontend.html`):
-   - User registration, login, issue submission
-   - Real-time WebSocket connection
-   - Live status updates for submitted issues
-
-2. **Staff Dashboard** (`staff_dashboard.html`):
-   - Category-specific issue management
-   - Real-time WebSocket connection
-   - Instant status update capabilities
-   - **NO** "My Reports", "Report New Issue", or "Recent Reports" sections
-
-3. **Admin Interface** (`test_frontend.html` with admin login):
-   - Full system oversight
-   - Real-time WebSocket connection
-   - Can update any issue status
-   - **NO** unnecessary sections for admin role
-
-### **Backend Services:**
-- **Flask REST API** with JWT authentication
-- **MongoDB** database with real-time data access
-- **WebSocket server** for real-time communications
-- **Email service** with SMTP integration
-- **Role-based access control** (user, staff, admin)
-
-### **Real-Time Communication:**
-- **Socket.IO WebSocket** connections
-- **Real-time rooms** for different user types
-- **Instant notifications** for status changes
-- **Live data synchronization** across all interfaces
-
-## 🚀 **FINAL SYSTEM STATUS**
-
-### **✅ FULLY OPERATIONAL WITH ALL REQUESTED FEATURES:**
-
-1. **✅ Staff UI Cleaned** - All unnecessary sections removed
-2. **✅ Real-Time Data Sync** - WebSocket-powered instant updates
-3. **✅ Email Notifications** - Automatic emails on status changes
-4. **✅ Staff & Admin Updates** - Both can change issue status
-5. **✅ Category-Based Access** - Staff see only their category
-6. **✅ Cross-Platform Sync** - All interfaces stay synchronized
-
-### **🎯 COMPLETE WORKFLOW (Real-Time):**
-```
-User submits issue → Real-time notification to admin
-    ↓
-Staff sees issue instantly → Updates status
-    ↓
-Email sent to user + Real-time sync to admin
-    ↓
-Admin sees update instantly → Can further update
-    ↓
-Email sent to user + Real-time sync to staff
-    ↓
-All interfaces show updated status in real-time
-```
-
-**🎊 YOUR CIVIC ISSUE REPORTING SYSTEM IS NOW COMPLETE WITH ALL REQUESTED FEATURES AND REAL-TIME CAPABILITIES!**
->🔐 Staff Login</h2>
+    <!-- Login Section -->
+    <div class="container" id="login-section">
+        <h2>👷 Staff Login</h2>
+        <p>Select your department to access category-specific issues:</p>
         
         <div class="login-options">
             <div class="login-card">
-                <div class="category-badge">🛣️ ROAD</div>
+                <div class="category-badge" style="background-color: #8B4513;">🛣️ ROAD</div>
                 <h3>Road Maintenance</h3>
                 <p>Handle road repairs, potholes, and infrastructure issues</p>
                 <button onclick="quickLogin('road.staff@civicreport.com', 'road123')">Login as Road Staff</button>
             </div>
             
             <div class="login-card">
-                <div class="category-badge">💡 LIGHTING</div>
+                <div class="category-badge" style="background-color: #FFD700;">💡 LIGHTING</div>
                 <h3>Street Lighting</h3>
                 <p>Manage street lights and electrical infrastructure</p>
                 <button onclick="quickLogin('lighting.staff@civicreport.com', 'lighting123')">Login as Lighting Staff</button>
             </div>
             
             <div class="login-card">
-                <div class="category-badge">🗑️ WASTE</div>
+                <div class="category-badge" style="background-color: #228B22;">🗑️ WASTE</div>
                 <h3>Waste Management</h3>
-                <p>Handle waste collection and sanitation issues</p>
+                <p>Handle garbage collection and waste disposal issues</p>
                 <button onclick="quickLogin('waste.staff@civicreport.com', 'waste123')">Login as Waste Staff</button>
             </div>
             
             <div class="login-card">
-                <div class="category-badge">💧 WATER</div>
+                <div class="category-badge" style="background-color: #4169E1;">💧 WATER</div>
                 <h3>Water Department</h3>
                 <p>Manage water supply and drainage issues</p>
                 <button onclick="quickLogin('water.staff@civicreport.com', 'water123')">Login as Water Staff</button>
             </div>
             
             <div class="login-card">
-                <div class="category-badge">🔧 OTHER</div>
+                <div class="category-badge" style="background-color: #9932CC;">🔧 GENERAL</div>
                 <h3>General Services</h3>
-                <p>Handle miscellaneous civic issues</p>
+                <p>Handle miscellaneous and other category issues</p>
                 <button onclick="quickLogin('general.staff@civicreport.com', 'general123')">Login as General Staff</button>
             </div>
         </div>
         
-        <div class="container">
-            <h3>Manual Login</h3>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" placeholder="Enter your staff email">
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" placeholder="Enter your password">
-            </div>
-            <button onclick="login()">Login</button>
-            <div id="login-message"></div>
-        </div>
+        <div id="login-message"></div>
     </div>
 
-    <!-- Staff Dashboard Section -->
+    <!-- Main Dashboard Section -->
     <div class="container hidden" id="dashboard-section">
         <div class="issue-header">
             <div>
                 <h2>Welcome, <span id="staff-name"></span>!</h2>
                 <div class="category-badge" id="staff-category"></div>
             </div>
-            <button onclick="logout()" class="btn-secondary">Logout</button>
+            <div>
+                <button onclick="openAdminView()" class="btn-warning">View as Admin</button>
+                <button onclick="logout()" class="btn-secondary">Logout</button>
+            </div>
+        </div>
+        
+        <!-- Real-time Status -->
+        <div class="container">
+            <div class="status">
+                <strong>System Status:</strong> 
+                <span id="real-time-status">🟡 Connecting...</span>
+                <span style="margin-left: 20px;">
+                    <strong>Email Notifications:</strong> 
+                    <span style="color: green;">✅ Active - Users receive emails when you update issue status</span>
+                </span>
+            </div>
         </div>
         
         <!-- Statistics -->
@@ -369,25 +378,15 @@ All interfaces show updated status in real-time
                 <div>Resolved</div>
             </div>
         </div>
-
-        <!-- Real-time Status -->
-        <div class="container">
-            <div class="status">
-                <strong>System Status:</strong>
-                <span id="real-time-status">🟡 Connecting...</span>
-                <span style="margin-left: 20px;">
-                    <strong>Email Notifications:</strong>
-                    <span style="color: green;">✅ Active - Users receive emails when you update issue status</span>
-                </span>
-            </div>
-        </div>
-
+        
         <!-- Issues Management -->
         <div class="container">
             <div class="issue-header">
                 <h3>📋 Issues in Your Category</h3>
-                <button onclick="loadStaffIssues()" class="btn-success">Refresh Issues</button>
-                <button onclick="openAdminView()" class="btn-warning" style="margin-left: 10px;">View as Admin</button>
+                <div>
+                    <button onclick="loadStaffIssues()" class="btn-success">Refresh Issues</button>
+                    <button onclick="openAdminView()" class="btn-warning">View as Admin</button>
+                </div>
             </div>
             
             <div class="form-group">
@@ -404,119 +403,158 @@ All interfaces show updated status in real-time
         </div>
     </div>
 
+    <!-- Notification Toast -->
+    <div id="notification" class="notification"></div>
+
     <script>
         const API_BASE = 'http://localhost:5000';
         let authToken = null;
         let currentUser = null;
+        let socket = null;
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
 
         // Check backend status
         async function checkBackendStatus() {
             try {
                 const response = await fetch(`${API_BASE}/health`);
                 const data = await response.json();
-                document.getElementById('backend-status').innerHTML = 
+                document.getElementById('backend-status').innerHTML =
                     `✅ Connected - ${data.collections.users} users, ${data.collections.issues} issues`;
             } catch (error) {
-                document.getElementById('backend-status').innerHTML = 
+                document.getElementById('backend-status').innerHTML =
                     `❌ Backend not running on ${API_BASE}`;
             }
         }
 
         // Quick login function
         async function quickLogin(email, password) {
-            document.getElementById('email').value = email;
-            document.getElementById('password').value = password;
-            await login();
-        }
-
-        // Login function
-        async function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
             try {
                 const response = await fetch(`${API_BASE}/login`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ email, password })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
-                    if (data.user.role !== 'staff') {
-                        document.getElementById('login-message').innerHTML = 
-                            '<div class="error">Access denied: Staff credentials required</div>';
-                        return;
-                    }
-                    
                     authToken = data.access_token;
                     currentUser = data.user;
-                    
+
                     document.getElementById('staff-name').textContent = currentUser.name;
-                    document.getElementById('staff-category').textContent = 
-                        `${getCategoryIcon(currentUser.category)} ${currentUser.category.toUpperCase()}`;
-                    
+                    document.getElementById('staff-category').textContent = `${currentUser.category} Department`;
+                    document.getElementById('staff-category').style.backgroundColor = getCategoryColor(currentUser.category);
+
                     document.getElementById('login-section').classList.add('hidden');
                     document.getElementById('dashboard-section').classList.remove('hidden');
-                    
-                    document.getElementById('login-message').innerHTML = 
-                        '<div class="success">Login successful!</div>';
-                    
+
+                    showNotification(`Welcome ${currentUser.name}! Logged in successfully.`, 'success');
+
+                    // Initialize WebSocket and load data
+                    initializeWebSocket();
                     loadStaffIssues();
                 } else {
-                    document.getElementById('login-message').innerHTML = 
-                        `<div class="error">${data.error}</div>`;
+                    showNotification(`Login failed: ${data.error}`, 'error');
                 }
             } catch (error) {
-                document.getElementById('login-message').innerHTML = 
-                    `<div class="error">Connection error: ${error.message}</div>`;
+                showNotification(`Connection error: ${error.message}`, 'error');
             }
         }
 
-        // Get category icon
-        function getCategoryIcon(category) {
-            const icons = {
-                'Road': '🛣️',
-                'Electricity': '💡',
-                'Waste': '🗑️',
-                'Water': '💧',
-                'Other': '🔧'
-            };
-            return icons[category] || '📋';
+        // Get category color
+        function getCategoryColor(category) {
+            switch(category) {
+                case 'Road': return '#8B4513';
+                case 'Electricity': return '#FFD700';
+                case 'Waste': return '#228B22';
+                case 'Water': return '#4169E1';
+                case 'Other': return '#9932CC';
+                default: return '#6c757d';
+            }
         }
 
-        // Logout function
-        function logout() {
-            authToken = null;
-            currentUser = null;
-            document.getElementById('login-section').classList.remove('hidden');
-            document.getElementById('dashboard-section').classList.add('hidden');
-            document.getElementById('email').value = '';
-            document.getElementById('password').value = '';
+        // WebSocket initialization
+        function initializeWebSocket() {
+            try {
+                socket = io(API_BASE);
+
+                socket.on('connect', function() {
+                    console.log('Connected to WebSocket server');
+                    document.getElementById('real-time-status').innerHTML =
+                        '<span style="color: green;">🟢 Real-time connection active</span>';
+
+                    // Join staff room for notifications
+                    if (authToken) {
+                        socket.emit('join_room', {room: 'staff'});
+                        socket.emit('join_room', {room: `staff_${currentUser.category}`});
+                    }
+                });
+
+                socket.on('disconnect', function() {
+                    console.log('Disconnected from WebSocket server');
+                    document.getElementById('real-time-status').innerHTML =
+                        '<span style="color: red;">🔴 Real-time connection lost</span>';
+                });
+
+                socket.on('status_update', function(data) {
+                    console.log('Status update received:', data);
+                    // Refresh issues list when status updates occur
+                    loadStaffIssues();
+
+                    // Show notification
+                    if (data.title) {
+                        showNotification(`📧 Issue Updated: "${data.title}" is now ${data.status}`, 'info');
+                    }
+                });
+
+                socket.on('notification', function(data) {
+                    console.log('Notification received:', data);
+                    if (data.type === 'new_issue') {
+                        // Refresh issues list when new issues are reported
+                        loadStaffIssues();
+                        showNotification(`🆕 New Issue: ${data.message}`, 'info');
+                    }
+                });
+
+            } catch (error) {
+                console.error('WebSocket connection failed:', error);
+                document.getElementById('real-time-status').innerHTML =
+                    '<span style="color: red;">🔴 Real-time connection failed</span>';
+            }
         }
 
         // Load staff issues
         async function loadStaffIssues() {
             if (!authToken) return;
-            
+
             try {
                 const statusFilter = document.getElementById('status-filter').value;
                 let url = `${API_BASE}/staff/reports`;
                 if (statusFilter) {
                     url += `?status=${statusFilter}`;
                 }
-                
+
                 const response = await fetch(url, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     updateStatistics(data.issues);
                     displayIssues(data.issues);
@@ -546,7 +584,7 @@ All interfaces show updated status in real-time
                 progress: issues.filter(i => i.status === 'In Progress').length,
                 resolved: issues.filter(i => i.status === 'Resolved').length
             };
-            
+
             document.getElementById('total-issues').textContent = stats.total;
             document.getElementById('pending-issues').textContent = stats.pending;
             document.getElementById('progress-issues').textContent = stats.progress;
@@ -556,12 +594,12 @@ All interfaces show updated status in real-time
         // Display issues
         function displayIssues(issues) {
             const issuesList = document.getElementById('issues-list');
-            
+
             if (issues.length === 0) {
                 issuesList.innerHTML = '<p>No issues found in your category.</p>';
                 return;
             }
-            
+
             issuesList.innerHTML = issues.map(issue => `
                 <div class="issue-card">
                     <div class="issue-header">
@@ -572,22 +610,25 @@ All interfaces show updated status in real-time
                     <p><strong>Location:</strong> ${issue.location.address || 'Not specified'}</p>
                     <p><strong>Reported by:</strong> ${issue.user_name} (${issue.user_email})</p>
                     <p><strong>Date:</strong> ${new Date(issue.created_at).toLocaleString()}</p>
-                    
+
                     <div class="form-group">
-                        <label>Update Status:</label>
-                        <select id="status-${issue._id}" onchange="updateIssueStatus('${issue._id}')">
+                        <label>Update Status (Email will be sent to user):</label>
+                        <select id="status-${issue._id}" onchange="updateIssueStatus('${issue._id}')" style="margin-bottom: 10px;">
                             <option value="Pending" ${issue.status === 'Pending' ? 'selected' : ''}>Pending</option>
                             <option value="In Progress" ${issue.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                             <option value="Resolved" ${issue.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
                         </select>
+                        <button onclick="updateIssueStatus('${issue._id}')" class="btn-success" style="width: auto; margin-left: 10px;">
+                            Update Status
+                        </button>
                     </div>
                 </div>
             `).join('');
         }
 
         // Update issue status with email notification feedback
-        async function updateIssueStatus(issueId, providedStatus = null) {
-            const newStatus = providedStatus || document.getElementById(`status-${issueId}`).value;
+        async function updateIssueStatus(issueId) {
+            const newStatus = document.getElementById(`status-${issueId}`).value;
 
             try {
                 const response = await fetch(`${API_BASE}/staff/update`, {
@@ -601,21 +642,20 @@ All interfaces show updated status in real-time
                         status: newStatus
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     // Show success message with email notification info
-                    alert(`✅ Status updated to "${newStatus}" successfully!\n📧 Email notification sent to the user automatically.`);
+                    showNotification(`✅ Status updated to "${newStatus}" successfully! 📧 Email notification sent to the user automatically.`, 'success');
                     loadStaffIssues();
                 } else {
-                    alert(`❌ Error updating status: ${data.error}`);
-                    // Reset the select to original value
-                    loadStaffIssues();
+                    showNotification(`❌ Error updating status: ${data.error}`, 'error');
+                    loadStaffIssues(); // Reset
                 }
             } catch (error) {
-                alert(`❌ Connection error: ${error.message}`);
-                loadStaffIssues();
+                showNotification(`❌ Connection error: ${error.message}`, 'error');
+                loadStaffIssues(); // Reset
             }
         }
 
@@ -624,66 +664,28 @@ All interfaces show updated status in real-time
             // Open test frontend with admin credentials pre-filled
             const adminUrl = 'test_frontend.html';
             window.open(adminUrl, '_blank');
-            alert('Admin view opened in new tab. Use admin@civicreport.com / admin123 to login and see ALL issues.');
+            showNotification('Admin view opened in new tab. Use admin@civicreport.com / admin123 to login and see ALL issues.', 'info');
         }
 
+        // Logout function
+        function logout() {
+            authToken = null;
+            currentUser = null;
 
-        // WebSocket connection for real-time updates
-        let socket = null;
-
-        function initializeWebSocket() {
-            try {
-                socket = io('http://localhost:5000');
-
-                socket.on('connect', function() {
-                    console.log('Connected to WebSocket server');
-                    document.getElementById('real-time-status').innerHTML =
-                        '<span style="color: green;">🟢 Real-time connection active</span>';
-
-                    // Join staff room for notifications
-                    if (authToken) {
-                        socket.emit('join_room', {room: 'staff'});
-                    }
-                });
-
-                socket.on('disconnect', function() {
-                    console.log('Disconnected from WebSocket server');
-                    document.getElementById('real-time-status').innerHTML =
-                        '<span style="color: red;">🔴 Real-time connection lost</span>';
-                });
-
-                socket.on('status_update', function(data) {
-                    console.log('Status update received:', data);
-                    // Refresh issues list when status updates occur
-                    loadStaffIssues();
-
-                    // Show notification
-                    if (data.title) {
-                        alert(`📧 Issue Updated: "${data.title}" is now ${data.status}`);
-                    }
-                });
-
-                socket.on('notification', function(data) {
-                    console.log('Notification received:', data);
-                    if (data.type === 'new_issue') {
-                        // Refresh issues list when new issues are reported
-                        loadStaffIssues();
-                    }
-                });
-
-            } catch (error) {
-                console.error('WebSocket connection failed:', error);
-                document.getElementById('real-time-status').innerHTML =
-                    '<span style="color: red;">🔴 Real-time connection failed</span>';
+            if (socket) {
+                socket.disconnect();
             }
+
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('dashboard-section').classList.add('hidden');
+            document.getElementById('login-message').innerHTML = '';
+
+            showNotification('Logged out successfully', 'info');
         }
 
         // Initialize
         checkBackendStatus();
         setInterval(checkBackendStatus, 30000); // Check every 30 seconds
-
-        // Initialize WebSocket for real-time updates
-        initializeWebSocket();
     </script>
 </body>
 </html>
