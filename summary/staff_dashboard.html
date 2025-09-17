@@ -303,10 +303,10 @@
             </div>
             
             <div class="login-card">
-                <div class="category-badge" style="background-color: #FFD700;">💡 LIGHTING</div>
+                <div class="category-badge" style="background-color: #FFD700;">💡 ELECTRICITY</div>
                 <h3>Street Lighting</h3>
                 <p>Manage street lights and electrical infrastructure</p>
-                <button onclick="quickLogin('lighting.staff@civicreport.com', 'lighting123')">Login as Lighting Staff</button>
+                <button onclick="quickLogin('lighting.staff@civicreport.com', 'lighting123')">Login as Electricity Staff</button>
             </div>
             
             <div class="login-card">
@@ -346,6 +346,33 @@
                 <button onclick="logout()" class="btn-secondary">Logout</button>
             </div>
         </div>
+
+        <!-- Navigation Menu -->
+        <div class="container">
+            <h3>🛠️ Staff Tools</h3>
+            <div class="stats">
+                <div class="stat-card" style="cursor: pointer;">
+                    <h4>📋 Manage Issues</h4>
+                    <p>View and update issues in your category</p>
+                    <button onclick="event.preventDefault(); event.stopPropagation(); scrollToIssues();" style="width: 100%; margin-top: 10px;">Go to Issues</button>
+                </div>
+                <div class="stat-card" style="cursor: pointer;">
+                    <h4>📊 View Statistics</h4>
+                    <p>See issue statistics and trends</p>
+                    <button onclick="event.preventDefault(); event.stopPropagation(); scrollToStats();" style="width: 100%; margin-top: 10px;">View Stats</button>
+                </div>
+                <div class="stat-card" style="cursor: pointer;">
+                    <h4>👑 Admin View</h4>
+                    <p>Open admin dashboard (all categories)</p>
+                    <button onclick="event.preventDefault(); event.stopPropagation(); openAdminDashboard();" style="width: 100%; margin-top: 10px;">Open Admin</button>
+                </div>
+                <div class="stat-card" style="cursor: pointer;">
+                    <h4>🔄 Refresh Data</h4>
+                    <p>Reload all dashboard data</p>
+                    <button onclick="event.preventDefault(); event.stopPropagation(); refreshAllData();" style="width: 100%; margin-top: 10px;">Refresh</button>
+                </div>
+            </div>
+        </div>
         
         <!-- Real-time Status -->
         <div class="container">
@@ -360,27 +387,30 @@
         </div>
         
         <!-- Statistics -->
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-number" id="total-issues">0</div>
-                <div>Total Issues</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="pending-issues">0</div>
-                <div>Pending</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="progress-issues">0</div>
-                <div>In Progress</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="resolved-issues">0</div>
-                <div>Resolved</div>
+        <div class="container" id="stats-section">
+            <h3>📊 Issue Statistics</h3>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-issues">0</div>
+                    <div>Total Issues</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pending-issues">0</div>
+                    <div>Pending</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="progress-issues">0</div>
+                    <div>In Progress</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="resolved-issues">0</div>
+                    <div>Resolved</div>
+                </div>
             </div>
         </div>
         
         <!-- Issues Management -->
-        <div class="container">
+        <div class="container" id="issues-section">
             <div class="issue-header">
                 <h3>📋 Issues in Your Category</h3>
                 <div>
@@ -538,24 +568,45 @@
 
         // Load staff issues
         async function loadStaffIssues() {
-            if (!authToken) return;
+            if (!authToken) {
+                console.error('No auth token available');
+                showNotification('Please login first', 'error');
+                return;
+            }
 
             try {
                 const statusFilter = document.getElementById('status-filter').value;
                 let url = `${API_BASE}/staff/reports`;
-                if (statusFilter) {
+                if (statusFilter && statusFilter !== 'all') {
                     url += `?status=${statusFilter}`;
                 }
 
+                console.log('Loading staff issues from:', url);
+                console.log('Auth token:', authToken ? 'Present' : 'Missing');
+
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `Bearer ${authToken}`
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
+                console.log('Response status:', response.status);
                 const data = await response.json();
+                console.log('Response data:', data);
 
                 if (response.ok) {
+                    // Verify category filtering
+                    if (data.issues && data.category) {
+                        const wrongCategoryIssues = data.issues.filter(issue => issue.category !== data.category);
+                        if (wrongCategoryIssues.length > 0) {
+                            console.warn('Category filtering issue detected:', wrongCategoryIssues);
+                        }
+
+                        console.log(`Loaded ${data.issues.length} issues for ${data.category} category`);
+                        showNotification(`Loaded ${data.issues.length} ${data.category} issues`, 'success');
+                    }
+
                     updateStatistics(data.issues);
                     displayIssues(data.issues);
 
@@ -563,16 +614,21 @@
                     document.getElementById('real-time-status').innerHTML =
                         '<span style="color: green;">🟢 Connected - Real-time updates active</span>';
                 } else {
+                    console.error('API error:', data);
                     document.getElementById('issues-list').innerHTML =
-                        `<div class="error">Error loading issues: ${data.error}</div>`;
+                        `<div class="error">Error loading issues: ${data.error || 'Unknown error'}</div>`;
+                    showNotification(`Error: ${data.error || 'Failed to load issues'}`, 'error');
                 }
             } catch (error) {
+                console.error('Connection error:', error);
                 document.getElementById('issues-list').innerHTML =
                     `<div class="error">Connection error: ${error.message}</div>`;
 
                 // Update real-time status
                 document.getElementById('real-time-status').innerHTML =
                     '<span style="color: red;">🔴 Connection error</span>';
+
+                showNotification(`Connection error: ${error.message}`, 'error');
             }
         }
 
@@ -661,10 +717,38 @@
 
         // Open admin view function
         function openAdminView() {
-            // Open test frontend with admin credentials pre-filled
-            const adminUrl = 'test_frontend.html';
-            window.open(adminUrl, '_blank');
-            showNotification('Admin view opened in new tab. Use admin@civicreport.com / admin123 to login and see ALL issues.', 'info');
+            try {
+                // First try Next.js admin dashboard (more reliable)
+                const nextAdminUrl = 'http://localhost:3000/admin/login';
+
+                // Check if Next.js server is running by making a quick request
+                fetch('http://localhost:3000/admin/login', { method: 'HEAD', mode: 'no-cors' })
+                    .then(() => {
+                        // Next.js is running, use it
+                        window.open(nextAdminUrl, '_blank');
+                        showNotification('Admin dashboard opened. Use admin@civicreport.com / admin123 to login.', 'info');
+                    })
+                    .catch(() => {
+                        // Next.js not running, try test_frontend.html
+                        try {
+                            const adminUrl = './test_frontend.html';
+                            const newWindow = window.open(adminUrl, '_blank');
+
+                            if (newWindow) {
+                                showNotification('Admin view opened in new tab. Use admin@civicreport.com / admin123 to login and see ALL issues.', 'info');
+                            } else {
+                                showNotification('Could not open admin view. Please ensure popup blockers are disabled or start Next.js server (npm run dev).', 'error');
+                            }
+                        } catch (error) {
+                            console.error('Error opening test_frontend.html:', error);
+                            showNotification('Admin view unavailable. Please start Next.js server: npm run dev', 'error');
+                        }
+                    });
+
+            } catch (error) {
+                console.error('Error in openAdminView:', error);
+                showNotification('Error opening admin view. Please check console for details.', 'error');
+            }
         }
 
         // Logout function
@@ -683,8 +767,125 @@
             showNotification('Logged out successfully', 'info');
         }
 
+        // Specific scroll functions to prevent 404 errors
+        function scrollToIssues() {
+            try {
+                console.log('Scrolling to issues section');
+                const element = document.getElementById('issues-section');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    showNotification('Navigated to Issues section', 'success');
+                } else {
+                    showNotification('Issues section not found', 'error');
+                }
+                return false; // Prevent any navigation
+            } catch (error) {
+                console.error('Error scrolling to issues:', error);
+                showNotification('Error navigating to issues', 'error');
+                return false;
+            }
+        }
+
+        function scrollToStats() {
+            try {
+                console.log('Scrolling to stats section');
+                const element = document.getElementById('stats-section');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    showNotification('Navigated to Statistics section', 'success');
+                } else {
+                    showNotification('Statistics section not found', 'error');
+                }
+                return false; // Prevent any navigation
+            } catch (error) {
+                console.error('Error scrolling to stats:', error);
+                showNotification('Error navigating to statistics', 'error');
+                return false;
+            }
+        }
+
+        function openAdminDashboard() {
+            try {
+                console.log('Opening admin dashboard');
+                // Try Next.js admin first
+                const nextAdminUrl = 'http://localhost:3000/admin/login';
+                window.open(nextAdminUrl, '_blank');
+                showNotification('Admin dashboard opened in new tab', 'info');
+                return false; // Prevent any navigation
+            } catch (error) {
+                console.error('Error opening admin dashboard:', error);
+                showNotification('Error opening admin dashboard', 'error');
+                return false;
+            }
+        }
+
+        function refreshAllData() {
+            try {
+                console.log('Refreshing all data');
+                showNotification('Refreshing dashboard data...', 'info');
+                loadStaffIssues();
+                connectWebSocket();
+                showNotification('Dashboard data refreshed', 'success');
+                return false; // Prevent any navigation
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                showNotification('Error refreshing data', 'error');
+                return false;
+            }
+        }
+
+        // Legacy scroll function (kept for compatibility)
+        function scrollToSection(sectionId) {
+            try {
+                console.log('Attempting to scroll to section:', sectionId);
+                const element = document.getElementById(sectionId);
+
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                    console.log('Successfully scrolled to:', sectionId);
+                    showNotification(`Navigated to ${sectionId.replace('-', ' ').replace('_', ' ')}`, 'success');
+                } else {
+                    console.warn('Section not found:', sectionId);
+                    console.log('Available sections:', Array.from(document.querySelectorAll('[id]')).map(el => el.id));
+                    showNotification(`Section "${sectionId}" not found. Please check console for available sections.`, 'error');
+                }
+                return false; // Prevent any navigation
+            } catch (error) {
+                console.error('Error in scrollToSection:', error);
+                showNotification(`Navigation error: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Refresh dashboard function
+        function refreshDashboard() {
+            showNotification('Refreshing dashboard data...', 'info');
+            loadStaffIssues();
+            connectWebSocket();
+        }
+
+        // Add section IDs for navigation
+        function addSectionIds() {
+            // Add ID to issues section if not present
+            const issuesSection = document.querySelector('.container:has(#issues-list)');
+            if (issuesSection && !issuesSection.id) {
+                issuesSection.id = 'issues-section';
+            }
+        }
+
         // Initialize
-        checkBackendStatus();
+        window.onload = function() {
+            try {
+                addSectionIds();
+                checkBackendStatus();
+                connectWebSocket();
+                console.log('Staff dashboard initialized successfully');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showNotification(`Initialization error: ${error.message}`, 'error');
+            }
+        };
+
         setInterval(checkBackendStatus, 30000); // Check every 30 seconds
     </script>
 </body>

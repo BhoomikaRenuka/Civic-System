@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, Home, Plus, FileText, Users, CheckCircle, Settings, Menu, X } from "lucide-react"
+import { AlertCircle, Home, Plus, FileText, Users, CheckCircle, Settings, Menu, X, Crown, Briefcase, LayoutDashboard } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ConnectionStatus } from "@/components/connection-status"
 import { NotificationBell } from "@/components/notification-bell"
@@ -23,15 +23,25 @@ export function Navbar() {
   // Role-aware navigation (no mutation)
   const navItems = user?.role === "admin"
     ? [
-        { name: "Dashboard", href: "/dashboard", icon: Home },
+        { name: "User Dashboard", href: "/dashboard", icon: Home },
+        { name: "Admin Dashboard", href: "/admin", icon: Crown },
+        { name: "All Dashboards", href: "/dashboards", icon: LayoutDashboard },
         { name: "General Issues", href: "/issues", icon: Users },
         { name: "Solved Issues", href: "/solved", icon: CheckCircle },
-        { name: "Admin", href: "/admin", icon: Settings },
+      ]
+    : user?.role === "staff"
+    ? [
+        { name: "Staff Dashboard", href: "/staff", icon: Briefcase },
+        { name: "User Dashboard", href: "/dashboard", icon: Home },
+        { name: "All Dashboards", href: "/dashboards", icon: LayoutDashboard },
+        { name: "General Issues", href: "/issues", icon: Users },
+        { name: "Solved Issues", href: "/solved", icon: CheckCircle },
       ]
     : [
         { name: "Dashboard", href: "/dashboard", icon: Home },
         { name: "Report Issue", href: "/report", icon: Plus },
         { name: "My Reports", href: "/my-reports", icon: FileText },
+        { name: "All Dashboards", href: "/dashboards", icon: LayoutDashboard },
         { name: "General Issues", href: "/issues", icon: Users },
         { name: "Solved Issues", href: "/solved", icon: CheckCircle },
       ]

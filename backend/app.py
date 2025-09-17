@@ -373,6 +373,95 @@ def get_all_issues():
         return jsonify({'error': str(e)}), 500
 
 # Staff Routes
+@app.route('/staff/login', methods=['POST'])
+def staff_login():
+    """Staff-specific login endpoint"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({'error': 'Missing email or password'}), 400
+
+        user = users_collection.find_one({'email': email})
+        if not user or not check_password_hash(user['password'], password):
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Verify this is a staff user
+        if user['role'] != 'staff':
+            return jsonify({'error': 'Access denied. Staff credentials required.'}), 403
+
+        # Create JWT token with additional claims
+        additional_claims = {'role': user['role']}
+        if 'category' in user:
+            additional_claims['category'] = user['category']
+
+        access_token = create_access_token(
+            identity=str(user['_id']),
+            additional_claims=additional_claims
+        )
+
+        user_response = {
+            'id': str(user['_id']),
+            'name': user['name'],
+            'email': user['email'],
+            'role': user['role'],
+            'category': user.get('category', 'Other')
+        }
+
+        return jsonify({
+            'message': 'Staff login successful',
+            'access_token': access_token,
+            'user': user_response
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/admin/login', methods=['POST'])
+def admin_login():
+    """Admin-specific login endpoint"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({'error': 'Missing email or password'}), 400
+
+        user = users_collection.find_one({'email': email})
+        if not user or not check_password_hash(user['password'], password):
+            return jsonify({'error': 'Invalid credentials'}), 401
+
+        # Verify this is an admin user
+        if user['role'] != 'admin':
+            return jsonify({'error': 'Access denied. Admin credentials required.'}), 403
+
+        # Create JWT token with additional claims
+        additional_claims = {'role': user['role']}
+
+        access_token = create_access_token(
+            identity=str(user['_id']),
+            additional_claims=additional_claims
+        )
+
+        user_response = {
+            'id': str(user['_id']),
+            'name': user['name'],
+            'email': user['email'],
+            'role': user['role']
+        }
+
+        return jsonify({
+            'message': 'Admin login successful',
+            'access_token': access_token,
+            'user': user_response
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/staff/reports', methods=['GET'])
 @jwt_required()
 def get_staff_reports():
@@ -417,6 +506,93 @@ def get_staff_reports():
             'issues': issues,
             'category': user_category,
             'total_count': len(issues)
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/staff/reports/<issue_id>/status', methods=['PUT'])
+@jwt_required()
+def staff_update_issue_status_put(issue_id):
+    """Staff endpoint to update issue status via PUT method"""
+    try:
+        from flask_jwt_extended import get_jwt
+
+        user_id = get_jwt_identity()
+        claims = get_jwt()
+        user_role = claims.get('role')
+        user_category = claims.get('category')
+
+        # Verify staff access
+        if user_role != 'staff':
+            return jsonify({'error': 'Staff access required'}), 403
+
+        data = request.get_json()
+        new_status = data.get('status')
+
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+
+        # Validate status
+        valid_statuses = ['Pending', 'In Progress', 'Resolved']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {valid_statuses}'}), 400
+
+        # Find the issue and verify it belongs to staff's category
+        issue = issues_collection.find_one({'_id': ObjectId(issue_id)})
+        if not issue:
+            return jsonify({'error': 'Issue not found'}), 404
+
+        if issue['category'] != user_category:
+            return jsonify({'error': 'Access denied. Issue not in your category.'}), 403
+
+        # Update the issue status
+        result = issues_collection.update_one(
+            {'_id': ObjectId(issue_id)},
+            {
+                '$set': {
+                    'status': new_status,
+                    'updated_at': datetime.utcnow(),
+                    'updated_by': user_id,
+                    'updated_by_role': 'staff'
+                }
+            }
+        )
+
+        if result.modified_count == 0:
+            return jsonify({'error': 'Failed to update issue status'}), 500
+
+        # Send email notification to user
+        try:
+            send_status_update_email(issue, new_status)
+        except Exception as email_error:
+            print(f"Email notification failed: {email_error}")
+
+        # Create notification for user
+        notification = {
+            'user_id': issue['user_id'],
+            'type': 'status_update',
+            'title': f'Issue Status Updated: {issue["title"]}',
+            'message': f'Your issue status has been updated to "{new_status}" by {user_category} department staff.',
+            'issue_id': issue_id,
+            'status': new_status,
+            'read': False,
+            'created_at': datetime.utcnow()
+        }
+        notifications_collection.insert_one(notification)
+
+        # Emit real-time update
+        socketio.emit('issue_updated', {
+            'issue_id': issue_id,
+            'status': new_status,
+            'category': issue['category'],
+            'updated_by': 'staff'
+        })
+
+        return jsonify({
+            'message': f'Issue status updated to {new_status}',
+            'issue_id': issue_id,
+            'status': new_status
         }), 200
 
     except Exception as e:

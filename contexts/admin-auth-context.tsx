@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import type { User } from "@/lib/api"
 
 interface AdminAuthContextType {
@@ -17,6 +18,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token_admin")
@@ -45,6 +47,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setToken(null)
     localStorage.removeItem("token_admin")
     localStorage.removeItem("user_admin")
+    // Redirect to home page after logout
+    router.push("/")
   }
 
   return (

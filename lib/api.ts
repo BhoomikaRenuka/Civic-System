@@ -5,7 +5,8 @@ export interface User {
   id: string
   name: string
   email: string
-  role: "user" | "admin"
+  role: "user" | "admin" | "staff"
+  category?: string
 }
 
 export interface AuthResponse {
@@ -19,15 +20,24 @@ export interface ApiError {
 }
 
 class ApiClient {
-  private getAuthHeaders(base: "user" | "admin" = "user") {
-    const token = base === "admin" ? localStorage.getItem("token_admin") : localStorage.getItem("token_user")
+  private getAuthHeaders(base: "user" | "admin" | "staff" = "user") {
+    let token: string | null = null
+
+    if (base === "admin") {
+      token = localStorage.getItem("token_admin")
+    } else if (base === "staff") {
+      token = localStorage.getItem("token_staff")
+    } else {
+      token = localStorage.getItem("token_user")
+    }
+
     return {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
     }
   }
 
-  async post<T>(endpoint: string, data: any, base: "user" | "admin" = "user"): Promise<T> {
+  async post<T>(endpoint: string, data: any, base: "user" | "admin" | "staff" = "user"): Promise<T> {
     const baseUrl = base === "admin" ? ADMIN_API_BASE_URL : API_BASE_URL
     const response = await fetch(`${baseUrl}${endpoint}`, {
       method: "POST",
@@ -44,7 +54,7 @@ class ApiClient {
     return result
   }
 
-  async get<T>(endpoint: string, params?: Record<string, string>, base: "user" | "admin" = "user"): Promise<T> {
+  async get<T>(endpoint: string, params?: Record<string, string>, base: "user" | "admin" | "staff" = "user"): Promise<T> {
     const baseUrl = base === "admin" ? ADMIN_API_BASE_URL : API_BASE_URL
     const url = new URL(`${baseUrl}${endpoint}`)
     if (params) {
@@ -66,8 +76,17 @@ class ApiClient {
     return result
   }
 
-  async postFormData<T>(endpoint: string, formData: FormData, base: "user" | "admin" = "user"): Promise<T> {
-    const token = base === "admin" ? localStorage.getItem("token_admin") : localStorage.getItem("token_user")
+  async postFormData<T>(endpoint: string, formData: FormData, base: "user" | "admin" | "staff" = "user"): Promise<T> {
+    let token: string | null = null
+
+    if (base === "admin") {
+      token = localStorage.getItem("token_admin")
+    } else if (base === "staff") {
+      token = localStorage.getItem("token_staff")
+    } else {
+      token = localStorage.getItem("token_user")
+    }
+
     const headers: Record<string, string> = {}
     if (token) {
       headers.Authorization = `Bearer ${token}`
@@ -131,4 +150,22 @@ export const notificationsApi = {
   getNotifications: (params?: { limit?: string }) =>
     api.get<{ notifications: NotificationItem[]; unread_count: number }>("/notifications", params),
   markRead: (ids?: string[]) => api.post<{ updated: number }>("/notifications/mark-read", { ids }),
+}
+
+// Staff API functions
+export const staffApi = {
+  login: (email: string, password: string) =>
+    api.post<AuthResponse>("/staff/login", { email, password }, "staff"),
+  getReports: () => api.get<any>("/staff/reports", undefined, "staff"),
+  updateStatus: (id: string, status: string) =>
+    api.put<any>(`/staff/reports/${id}/status`, { status }, "staff"),
+}
+
+// Admin API functions
+export const adminApi = {
+  login: (email: string, password: string) =>
+    api.post<AuthResponse>("/admin/login", { email, password }, "admin"),
+  getReports: () => api.get<any>("/admin/reports", undefined, "admin"),
+  updateStatus: (id: string, status: string) =>
+    api.put<any>(`/admin/reports/${id}/status`, { status }, "admin"),
 }

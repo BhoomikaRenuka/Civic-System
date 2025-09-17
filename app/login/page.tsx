@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Eye, EyeOff } from "lucide-react"
-import { authApi } from "@/lib/api"
+import { authApi, staffApi, adminApi } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 
 export default function LoginPage() {
@@ -29,11 +29,83 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.login({ email, password })
-      login(response.user, response.access_token)
-      router.push("/dashboard")
+      // Try different login endpoints based on email pattern and credentials
+      let response = null
+      let userType = null
+
+      // First, try to determine user type based on email pattern
+      if (email.includes('.staff@') || email.includes('staff@')) {
+        // Try staff login first
+        try {
+          response = await staffApi.login(email, password)
+          userType = 'staff'
+        } catch (staffError) {
+          // If staff login fails, try regular user login
+          try {
+            response = await authApi.login({ email, password })
+            userType = 'user'
+          } catch (userError) {
+            // If both fail, try admin login
+            response = await adminApi.login(email, password)
+            userType = 'admin'
+          }
+        }
+      } else if (email.includes('admin@') || email === 'admin@civicreport.com') {
+        // Try admin login first
+        try {
+          response = await adminApi.login(email, password)
+          userType = 'admin'
+        } catch (adminError) {
+          // If admin login fails, try regular user login
+          try {
+            response = await authApi.login({ email, password })
+            userType = 'user'
+          } catch (userError) {
+            // If both fail, try staff login
+            response = await staffApi.login(email, password)
+            userType = 'staff'
+          }
+        }
+      } else {
+        // Try regular user login first
+        try {
+          response = await authApi.login({ email, password })
+          userType = 'user'
+        } catch (userError) {
+          // If user login fails, try staff login
+          try {
+            response = await staffApi.login(email, password)
+            userType = 'staff'
+          } catch (staffError) {
+            // If both fail, try admin login
+            response = await adminApi.login(email, password)
+            userType = 'admin'
+          }
+        }
+      }
+
+      // Store credentials and redirect based on user type
+      if (response && userType) {
+        if (userType === 'staff') {
+          // Store staff credentials
+          localStorage.setItem("token_staff", response.access_token)
+          localStorage.setItem("user_staff", JSON.stringify(response.user))
+          router.push("/staff")
+        } else if (userType === 'admin') {
+          // Store admin credentials
+          localStorage.setItem("token_admin", response.access_token)
+          localStorage.setItem("user_admin", JSON.stringify(response.user))
+          router.push("/admin")
+        } else {
+          // Store regular user credentials
+          login(response.user, response.access_token)
+          router.push("/dashboard")
+        }
+      } else {
+        setError("Invalid credentials. Please check your email and password.")
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+      setError("Invalid credentials. Please check your email and password.")
     } finally {
       setIsLoading(false)
     }
@@ -48,13 +120,13 @@ export default function LoginPage() {
             <AlertCircle className="h-10 w-10 text-blue-600 mr-3" />
             <h1 className="text-3xl font-bold text-gray-900">CivicReport</h1>
           </div>
-          <p className="text-gray-600">Sign in to your account</p>
+          <p className="text-gray-600">Sign in with your credentials - User, Staff, or Admin</p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Welcome back</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardDescription>Enter your credentials - system will automatically route you to the correct dashboard</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
